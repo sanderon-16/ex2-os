@@ -1,12 +1,22 @@
 //
-// Created by TLP-299 on 14/06/2024.
+// Created by TLP-258 on 14/06/2024.
 //
 
-#ifndef _THREAD_H_
-#define _THREAD_H_
+#ifndef DEMO_ITIMER_C_THREAD_H
+#define DEMO_ITIMER_C_THREAD_H
 
-struct thread
-{
+#include "uthreads.h"
+
+#define STACK_SIZE 4096
+
+
+struct Thread {
+    char state;
+    int id;
+    char stack[STACK_SIZE];
+    int elapsed_quantums;
+    thread_entry_point entry_point;
 };
 
-#endif //_THREAD_H_
+
+#endif //DEMO_ITIMER_C_THREAD_H
