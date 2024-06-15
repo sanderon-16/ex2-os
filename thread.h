@@ -9,16 +9,19 @@
 
 #define STACK_SIZE 4096
 
+enum states {READY, RUNNING, SLEEP, BLOCKED, SNB};
 
 struct Thread {
-    char state;
+    states state;
     int id;
     int quantums_to_sleep;
-    char* stack;
-    int elapsed_quantums;
+    char *stack;
+    int elapsed_quantums{};
     thread_entry_point entry_point;
 
-    Thread (int i, thread_entry_point p_function);
+    Thread(int i, thread_entry_point p_function);
+    Thread(); // for the main thread
+
     ~Thread();
 };
 
