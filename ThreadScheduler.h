@@ -9,16 +9,27 @@
 #include "thread.h"
 #include <queue>
 #include <vector>
+#include <csetjmp>
+#include <csignal>
+#include <sys/time.h>
 
-typedef void (*thread_entry_point)(void);
+#include <memory>
+#include <iostream>
+#define SECOND 1000000
 
-class ThreadScheduler {
-    int quantum_usecs;
-    int elapsed_quantums;
-    int n_threads;
-    int RUNNING_id;
-    Thread **threads_arr;
-    std::queue<Thread *> queue_READY;
+typedef void (*thread_entry_point) (void);
+
+class ThreadScheduler
+{
+  int quantum_usecs;
+  int elapsed_quantums;
+
+  // Thread managing:
+  int n_threads;
+  int RUNNING_id;
+  sigjmp_buf env[MAX_THREAD_NUM];
+  Thread **threads_arr;
+  std::queue<Thread *> queue_READY;
 
 public:
     /**
