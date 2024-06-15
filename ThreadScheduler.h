@@ -10,33 +10,71 @@
 #include <queue>
 #include <vector>
 
-typedef void (*thread_entry_point) (void);
+typedef void (*thread_entry_point)(void);
 
-class ThreadScheduler
-{
-  int quantum_usecs;
-  int elapsed_quantums;
-  int n_threads;
-  int RUNNING_id;
-  Thread** threads_arr;
-  std::queue<Thread *> queue_READY;
+class ThreadScheduler {
+    int quantum_usecs;
+    int elapsed_quantums;
+    int n_threads;
+    int RUNNING_id;
+    Thread **threads_arr;
+    std::queue<Thread *> queue_READY;
 
- public:
-  ThreadScheduler (int _quantum_usecs);
+public:
+    /**
+     * the constructor of the scheduler.
+     * @param _quantum_usecs decides how much time is considered a quantum.
+     */
+    ThreadScheduler(int _quantum_usecs);
 
-  /**
-   * @brief Creates a new thread, whose entry point is the function entry_point with the signature
-   * void entry_point(void).
-   *
-   * The thread is added to the end of the READY threads list.
-   * The uthread_spawn function should fail if it would cause the number of concurrent threads to exceed the
-   * limit (MAX_THREAD_NUM).
-   * Each thread should be allocated with a stack of size STACK_SIZE bytes.
-   * It is an error to call this function with a null entry_point.
-   *
-   * @return On success, return the ID of the created thread. On failure, return -1.
-  */
-  int spawn_thread (thread_entry_point entry_point);
+    /**
+     * switches the currently running thread.
+     */
+    int switch_threads();
+
+    /**
+     * stops the currently active thread.
+     */
+    int stop_active_thread();
+
+    /**
+     * called during any active-thread switch, decreases the time left for any sleeping
+     * thread to sleep, awakens those threads that are supposed to awake.
+     */
+    int sleeping_threads_handler();
+
+    /**
+     * the function creates another thread.
+     * @param entry_point is a pointer to the code of the thread.
+     * @return 0 for success, -1 otherwise.
+     */
+    int spawn_thread(thread_entry_point entry_point);
+
+    /**
+     * returns the amount of quantums the thread with id tid was running.
+     * @param tid the id to look for.
+     * @return 0 for success, -1 otherwise.
+     */
+    int get_thread_elapsed_quantums(int tid);
+
+    /**
+     * returns the total amount of quantum passed since the scheduler was initialized.
+     * @return as explained.
+     */
+    int get_elapsed_quantums() const;
+
+    /**
+     * returns the id of the running thread.
+     * @return as explained.
+     */
+    int get_RUNNING_id() const;
+
+    /**
+     * sets the running thread to sleeping mode.
+     * @param num_quantums the amount of time the thread is asked to be sleeping.
+     * @return 0 for success, -1 otherwise.
+     */
+    int sleep_handler(int num_quantums) const;
 };
 
 #endif //_THREADSCHEDULER_H_

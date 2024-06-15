@@ -8,18 +8,71 @@
 
 std::unique_ptr<ThreadScheduler> scheduler;
 
-int uthread_init (int quantum_usecs)
-{
-  if (quantum_usecs <= 0)
-    {
-      return -1;
+int uthread_init(int quantum_usecs) {
+    if (quantum_usecs <= 0) {
+        return -1;
     }
-  scheduler = std::make_unique<ThreadScheduler> (quantum_usecs);
-  return 0;
+    scheduler = std::make_unique<ThreadScheduler>(quantum_usecs);
+    return 0;
 }
 
-int uthread_spawn (thread_entry_point entry_point)
-{
-  return scheduler->spawn_thread (entry_point);
+
+/**
+ * @brief Returns the number of quantums the thread with ID tid was in RUNNING state.
+ *
+ * On the first time a thread runs, the function should return 1. Every additional quantum that the thread starts should
+ * increase this value by 1 (so if the thread with ID tid is in RUNNING state when this function is called, include
+ * also the current quantum). If no thread with ID tid exists it is considered an error.
+ *
+ * @return On success, return the number of quantums of the thread with ID tid. On failure, return -1.
+*/
+int uthread_get_quantums(int tid) {
+    return scheduler->get_thread_elapsed_quantums(tid);
+}
+
+
+/**
+ * @brief Returns the total number of quantums since the library was initialized, including the current quantum.
+ *
+ * Right after the call to uthread_init, the value should be 1.
+ * Each time a new quantum starts, regardless of the reason, this number should be increased by 1.
+ *
+ * @return The total number of quantums.
+*/
+int uthread_get_total_quantums() {
+    return scheduler->get_elapsed_quantums();
+}
+
+
+/**
+ * @brief Returns the thread ID of the calling thread.
+ *
+ * @return The ID of the calling thread.
+*/
+int uthread_get_tid() {
+    return scheduler->get_RUNNING_id();
+}
+
+
+/**
+ * @brief Blocks the RUNNING thread for num_quantums quantums.
+ *
+ * Immediately after the RUNNING thread transitions to the BLOCKED state a scheduling decision should be made.
+ * After the sleeping time is over, the thread should go back to the end of the READY queue.
+ * If the thread which was just RUNNING should also be added to the READY queue, or if multiple threads wake up
+ * at the same time, the order in which they're added to the end of the READY queue doesn't matter.
+ * The number of quantums refers to the number of times a new quantum starts, regardless of the reason. Specifically,
+ * the quantum of the thread which has made the call to uthread_sleep isn’t counted.
+ * It is considered an error if the main thread (tid == 0) calls this function.
+ *
+ * @return On success, return 0. On failure, return -1.
+*/
+int uthread_sleep(int num_quantums) {
+    return scheduler->sleep_handler(num_quantums);
+}
+
+
+int uthread_spawn(thread_entry_point entry_point) {
+    return scheduler->spawn_thread(entry_point);
 }
 

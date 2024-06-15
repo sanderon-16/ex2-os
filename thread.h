@@ -13,6 +13,7 @@
 struct Thread {
     char state;
     int id;
+    int quantums_to_sleep;
     char* stack;
     int elapsed_quantums;
     thread_entry_point entry_point;
