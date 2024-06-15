@@ -50,4 +50,8 @@ int uthread_spawn (thread_entry_point entry_point)
   return scheduler->spawn_thread (entry_point);
 }
 
+int uthread_terminate (int tid)
+{
+  scheduler->terminate_thread (tid);
+}
 

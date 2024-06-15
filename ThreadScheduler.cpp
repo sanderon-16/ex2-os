@@ -72,3 +72,7 @@ int ThreadScheduler::spawn_thread (thread_entry_point entry_point)
   return -1;
 }
 
+int ThreadScheduler::terminate_thread (int tid)
+{
+  //
+}

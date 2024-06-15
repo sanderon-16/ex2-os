@@ -49,6 +49,7 @@ class ThreadScheduler
    * @return On success, return the ID of the created thread. On failure, return -1.
   */
   int spawn_thread (thread_entry_point entry_point);
+  int terminate_thread (int tid);
 };
 
 #endif //_THREADSCHEDULER_H_
