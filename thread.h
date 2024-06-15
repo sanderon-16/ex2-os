@@ -13,9 +13,12 @@
 struct Thread {
     char state;
     int id;
-    char stack[STACK_SIZE];
+    char* stack;
     int elapsed_quantums;
     thread_entry_point entry_point;
+
+    Thread (int i, thread_entry_point p_function);
+    ~Thread();
 };
 
 

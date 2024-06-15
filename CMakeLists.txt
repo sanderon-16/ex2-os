@@ -3,4 +3,4 @@ project(ex2)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(ex2 demo_itimer.c ThreadScheduler.cpp ThreadScheduler.h thread.cpp thread.h)
+add_executable(ex2 ThreadScheduler.cpp ThreadScheduler.h thread.cpp thread.h uthreads.h uthreads.cpp)
