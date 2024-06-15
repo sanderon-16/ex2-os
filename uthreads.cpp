@@ -12,7 +12,7 @@ struct itimerval timer;
 void timer_handler (int sig)
 {
   std::cout << "Quantum expired\n";
-  scheduler->swich_threads();
+  scheduler->switch_threads();
 }
 
 int uthread_init (int quantum_usecs)
