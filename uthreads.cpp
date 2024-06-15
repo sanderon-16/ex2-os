@@ -27,7 +27,8 @@ int uthread_init (int quantum_usecs)
     // installing the timer handler
     sa.sa_handler = &timer_handler;
     if (sigaction(SIGVTALRM, &sa, nullptr) < 0) {
-        //TODO print an error
+        std::cerr << "thread library error: setitimer install error.\n" << std::endl;
+        return -1;
     }
 
     // configuring the timer to expire after quantum_usecs mircoseconds
@@ -39,7 +40,8 @@ int uthread_init (int quantum_usecs)
 
     // Start a virtual timer. It counts down whenever this process is executing.
     if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
-        // TODO print an error
+        std::cerr << "thread library error: setitimer start error.\n" << std::endl;
+        return -1;
     }
     return 0;
 }
@@ -105,6 +107,8 @@ int uthread_spawn(thread_entry_point entry_point) {
 }
 
 int uthread_terminate(int tid) {
-    scheduler->terminate_thread(tid);
+    // reset the timer:
+
+    return scheduler->terminate_thread(tid);
 }
 

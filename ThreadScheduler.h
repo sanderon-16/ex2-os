@@ -15,6 +15,7 @@
 
 #include <memory>
 #include <iostream>
+
 #define SECOND 1000000
 
 typedef void (*thread_entry_point)(void);
@@ -94,6 +95,12 @@ public:
      */
     int sleep_handler(int num_quantums);
 
+    /**
+     * terminates a thread, and returns the number of quantums the thread has ran.
+     * @param tid
+     * @return On success, return the number of quantums of the thread with ID tid. On failure, return -1.
+     */
+    int terminate_thread(int tid);
 };
 
 #endif //_THREADSCHEDULER_H_

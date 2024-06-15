@@ -129,5 +129,29 @@ int ThreadScheduler::sleeping_threads_handler() {
 }
 
 int ThreadScheduler::terminate_thread(int tid) {
-    //
+    if (tid == 0) {
+        // release all resources
+        for (int i = 0; i < MAX_THREAD_NUM; i++) {
+            if (threads_arr[i] != nullptr) {
+                delete threads_arr[i];
+            }
+        }
+        delete[] threads_arr;
+        exit(0);
+    }
+    int quantums_elapsed = get_thread_elapsed_quantums(tid);
+    if (quantums_elapsed == -1) {
+        return -1;
+    }
+    delete threads_arr[tid];
+    threads_arr[tid] = nullptr;
+    n_threads--;
+
+    // if the thread deleted itself, we need to switch threads
+    if (tid == RUNNING_id) {
+        switch_threads();
+    }
+    return quantums_elapsed;
+
+
 }
