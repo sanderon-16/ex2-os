@@ -1,5 +1,6 @@
 #include "thread.h"
 
+
 Thread::Thread (int i, thread_entry_point p_function)
 {
   id = i;

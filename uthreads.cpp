@@ -11,10 +11,9 @@ std::unique_ptr<ThreadScheduler> scheduler;
 struct sigaction sa;
 struct itimerval timer;
 
-void timer_handler (int sig)
-{
-  std::cout << "Quantum expired\n";
-  scheduler->switch_threads();
+void timer_handler(int sig) {
+    std::cout << "Quantum expired\n";
+    scheduler->switch_threads();
 }
 
 int uthread_init (int quantum_usecs)
@@ -25,27 +24,26 @@ int uthread_init (int quantum_usecs)
     }
   scheduler = std::make_unique<ThreadScheduler> (quantum_usecs);
 
-  // installing the timer handler
-  sa.sa_handler = &timer_handler;
-  if (sigaction (SIGVTALRM, &sa, nullptr) < 0)
-    {
-      //TODO print an error
+    // installing the timer handler
+    sa.sa_handler = &timer_handler;
+    if (sigaction(SIGVTALRM, &sa, nullptr) < 0) {
+        //TODO print an error
     }
 
-  // configuring the timer to expire after quantum_usecs mircoseconds
-  timer.it_value.tv_sec = quantum_usecs / SECOND;
-  timer.it_value.tv_usec = quantum_usecs % SECOND;
+    // configuring the timer to expire after quantum_usecs mircoseconds
+    timer.it_value.tv_sec = quantum_usecs / SECOND;
+    timer.it_value.tv_usec = quantum_usecs % SECOND;
 
-  timer.it_interval.tv_sec = quantum_usecs / SECOND;
-  timer.it_interval.tv_usec = quantum_usecs % SECOND;
+    timer.it_interval.tv_sec = quantum_usecs / SECOND;
+    timer.it_interval.tv_usec = quantum_usecs % SECOND;
 
-  // Start a virtual timer. It counts down whenever this process is executing.
-  if (setitimer (ITIMER_VIRTUAL, &timer, nullptr))
-    {
-      // TODO print an error
+    // Start a virtual timer. It counts down whenever this process is executing.
+    if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
+        // TODO print an error
     }
-  return 0;
+    return 0;
 }
+
 
 /**
  * @brief Returns the number of quantums the thread with ID tid was in RUNNING state.
@@ -56,10 +54,10 @@ int uthread_init (int quantum_usecs)
  *
  * @return On success, return the number of quantums of the thread with ID tid. On failure, return -1.
 */
-int uthread_get_quantums (int tid)
-{
-  return scheduler->get_thread_elapsed_quantums (tid);
+int uthread_get_quantums(int tid) {
+    return scheduler->get_thread_elapsed_quantums(tid);
 }
+
 
 /**
  * @brief Returns the total number of quantums since the library was initialized, including the current quantum.
@@ -69,20 +67,20 @@ int uthread_get_quantums (int tid)
  *
  * @return The total number of quantums.
 */
-int uthread_get_total_quantums ()
-{
-  return scheduler->get_elapsed_quantums ();
+int uthread_get_total_quantums() {
+    return scheduler->get_elapsed_quantums();
 }
+
 
 /**
  * @brief Returns the thread ID of the calling thread.
  *
  * @return The ID of the calling thread.
 */
-int uthread_get_tid ()
-{
-  return scheduler->get_RUNNING_id ();
+int uthread_get_tid() {
+    return scheduler->get_RUNNING_id();
 }
+
 
 /**
  * @brief Blocks the RUNNING thread for num_quantums quantums.
@@ -97,18 +95,16 @@ int uthread_get_tid ()
  *
  * @return On success, return 0. On failure, return -1.
 */
-int uthread_sleep (int num_quantums)
-{
-  return scheduler->sleep_handler (num_quantums);
+int uthread_sleep(int num_quantums) {
+    return scheduler->sleep_handler(num_quantums);
 }
 
-int uthread_spawn (thread_entry_point entry_point)
-{
-  return scheduler->spawn_thread (entry_point);
+
+int uthread_spawn(thread_entry_point entry_point) {
+    return scheduler->spawn_thread(entry_point);
 }
 
-int uthread_terminate (int tid)
-{
-  scheduler->terminate_thread (tid);
+int uthread_terminate(int tid) {
+    scheduler->terminate_thread(tid);
 }
 

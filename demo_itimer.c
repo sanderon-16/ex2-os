@@ -21,6 +21,7 @@ void timer_handler(int sig)
 
 int main(void)
 {
+    printf("hello");
     struct sigaction sa = {0};
     struct itimerval timer;
 

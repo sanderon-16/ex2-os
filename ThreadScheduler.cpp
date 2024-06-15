@@ -54,7 +54,7 @@ ThreadScheduler::ThreadScheduler(int _quantum_usecs)
 int ThreadScheduler::switch_threads() {
     stop_active_thread();
     sleeping_threads_handler();
-
+    elapsed_quantums += 1;
 }
 
 int ThreadScheduler::get_thread_elapsed_quantums(int tid) {
@@ -92,12 +92,16 @@ int ThreadScheduler::spawn_thread(thread_entry_point entry_point) {
     return -1;
 }
 
-int ThreadScheduler::sleep_handler(int num_quantums) const {
-    if (get_RUNNING_id() == 0) {
+int ThreadScheduler::sleep_handler(int num_quantums) {
+    int id_to_deal_with = get_RUNNING_id();
+
+    if (id_to_deal_with == 0) {
         return -1;
     }
-    threads_arr[get_RUNNING_id()]->quantums_to_sleep = num_quantums;
-    threads_arr[get_RUNNING_id()]->state = 'B';
+    threads_arr[id_to_deal_with]->quantums_to_sleep = num_quantums;
+    switch_threads();
+    threads_arr[id_to_deal_with]->state = SLEEP;
+    return 0;
 }
 
 int ThreadScheduler::stop_active_thread() {
@@ -115,10 +119,10 @@ int ThreadScheduler::sleeping_threads_handler() {
         threads_arr[i]->quantums_to_sleep -= 1;
         if (threads_arr[i]->quantums_to_sleep == 0) {
             if (threads_arr[i]->state == 'S') {
-                threads_arr[i]->state = 'R';
+                threads_arr[i]->state = READY;
                 queue_READY.push(threads_arr[i]);
             } else {
-                threads_arr[i]->state = 'B';
+                threads_arr[i]->state = BLOCKED;
             }
         }
     }

@@ -15,7 +15,6 @@
 
 #include <memory>
 #include <iostream>
-
 #define SECOND 1000000
 
 typedef void (*thread_entry_point)(void);
@@ -93,7 +92,7 @@ public:
      * @param num_quantums the amount of time the thread is asked to be sleeping.
      * @return 0 for success, -1 otherwise.
      */
-    int sleep_handler(int num_quantums) const;
+    int sleep_handler(int num_quantums);
 
 };
 
