@@ -36,6 +36,7 @@ void ThreadScheduler::setup_thread(int tid, char *stack, thread_entry_point entr
     }
 }
 
+
 ThreadScheduler::ThreadScheduler(int _quantum_usecs)
         : quantum_usecs(_quantum_usecs), elapsed_quantums(1), n_threads(1), RUNNING_id(0) {
     // initializing threads array

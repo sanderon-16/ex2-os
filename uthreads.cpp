@@ -51,11 +51,21 @@ int uthread_spawn(thread_entry_point entry_point) {
 
 
 int uthread_terminate(int tid) {
+    // reset the timer:
+    if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
+        std::cerr << "thread library error: setitimer start error." << std::endl;
+        return -1;
+    }
     scheduler->terminate_thread(tid);
 }
 
 
 int uthread_block(int tid) {
+    // reset the timer: TODO if idblocked==idrunning
+    if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
+        std::cerr << "thread library error: setitimer start error." << std::endl;
+        return -1;
+    }
     scheduler->block_thread(tid);
 }
 
@@ -65,16 +75,6 @@ int uthread_resume(int tid) {
 }
 
 
-int uthread_spawn(thread_entry_point entry_point) {
-    return scheduler->spawn_thread(entry_point);
-}
-
-int uthread_terminate(int tid) {
-    // reset the timer:
-
-    return scheduler->terminate_thread(tid);
-}
-
 
 int uthread_sleep(int num_quantums) {
 
@@ -83,8 +83,11 @@ int uthread_sleep(int num_quantums) {
         return -1;
     }
 
-    // restart timer
-    // TODO reset timer
+    // reset the timer:
+    if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
+        std::cerr << "thread library error: setitimer start error." << std::endl;
+        return -1;
+    }
 
     // go to sleep
     return scheduler->sleep_handler(num_quantums);
