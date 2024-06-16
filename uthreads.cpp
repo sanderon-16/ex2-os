@@ -38,7 +38,7 @@ int uthread_init(int quantum_usecs) {
 
     // Start a virtual timer. It counts down whenever this process is executing.
     if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
-        std::cerr << "thread library error: setitimer start error.\n" << std::endl;
+        std::cerr << "thread library error: setitimer start error." << std::endl;
         return -1;
     }
     return 0;
@@ -46,7 +46,11 @@ int uthread_init(int quantum_usecs) {
 
 
 int uthread_spawn(thread_entry_point entry_point) {
-    return scheduler->spawn_thread(entry_point);
+    int ret_value = scheduler->spawn_thread(entry_point);
+    if (ret_value == -1) {
+        std::cerr << "thread library error: spawn error." << std::endl;
+    }
+    return ret_value
 }
 
 
@@ -67,7 +71,11 @@ int uthread_terminate(int tid) {
     }
 
     // terminating thread
-    return scheduler->terminate_thread(tid);
+    int ret_value = scheduler->terminate_thread(tid);
+    if (ret_value == -1) {
+        std::cerr << "thread library error: thread terminating error." << std::endl;
+    }
+    return ret_value;
 }
 
 
@@ -82,12 +90,23 @@ int uthread_block(int tid) {
     }
 
     // blocking thread
-    return scheduler->block_thread(tid);
+    int ret_value = scheduler->block_thread(tid);
+    if (ret_value == -1) {
+        std::cerr << "thread library error: thread blocking error." << std::endl;
+    }
+    return ret_value;
 }
 
 
 int uthread_resume(int tid) {
-    return scheduler->resume_thread(tid);
+    if (scheduler->get_RUNNING_id() == tid) {
+        return 0;
+    }
+    int ret_value = scheduler->resume_thread(tid);
+    if (ret_value == -1) {
+        std::cerr << "thread library error: thread resuming error." << std::endl;
+    }
+    return ret_value;
 }
 
 
@@ -95,6 +114,7 @@ int uthread_sleep(int num_quantums) {
 
     // check input validity
     if (num_quantums < 1) {
+        std::cerr << "thread library error: sleep input error." << std::endl;
         return -1;
     }
 
@@ -105,7 +125,11 @@ int uthread_sleep(int num_quantums) {
     }
 
     // go to sleep
-    return scheduler->sleep_handler(num_quantums);
+    int ret_value = scheduler->sleep_handler(num_quantums);
+    if (ret_value == -1) {
+        std::cerr << "thread library error: thread sleeping error." << std::endl;
+    }
+    return ret_value;
 }
 
 
@@ -120,5 +144,9 @@ int uthread_get_total_quantums() {
 
 
 int uthread_get_quantums(int tid) {
-    return scheduler->get_thread_elapsed_quantums(tid);
+    int ret_value = scheduler->get_thread_elapsed_quantums(tid);
+    if (ret_value == -1) {
+        std::cerr << "thread library error: thread getting quantums error." << std::endl;
+    }
+    return ret_value;
 }
