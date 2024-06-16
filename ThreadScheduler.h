@@ -15,10 +15,10 @@
 
 #include <memory>
 #include <iostream>
-
 #define SECOND 1000000
 
 typedef void (*thread_entry_point)(void);
+enum preempted_reason {expired_quantum, blocked_state, terminated, sleeping};
 
 class ThreadScheduler {
     int quantum_usecs;
@@ -49,12 +49,8 @@ public:
     /**
        * switches the currently running thread.
        */
-    int switch_threads();
+    int switch_threads(preempted_reason pr);
 
-    /**
-     * stops the currently active thread.
-     */
-    int stop_active_thread();
 
     /**
      * called during any active-thread switch, decreases the time left for any sleeping
@@ -95,6 +91,19 @@ public:
      */
     int sleep_handler(int num_quantums);
 
+    /**
+     * removes the thread with id tid from being blocked.
+     * @param tid the id of the thread we would like to resume.
+     * @return 0 for success, -1 otherwise.
+     */
+    int resume_thread(int tid);
+
+    /**
+     * blocks a desired thread.
+     * @param tid the id of the thread asked to be blocked.
+     * @return 0 for success, -1 otherwise.
+     */
+    int block_thread(int tid);
     /**
      * terminates a thread, and returns the number of quantums the thread has ran.
      * @param tid

@@ -51,11 +51,48 @@ ThreadScheduler::ThreadScheduler(int _quantum_usecs)
     }
 }
 
-int ThreadScheduler::switch_threads() {
-    stop_active_thread();
+int ThreadScheduler::switch_threads(preempted_reason pr) {
+
+    // advance sleeping thread one quantum
     sleeping_threads_handler();
+
+    // add one quantum to total
     elapsed_quantums += 1;
+
+    // add one quantum to the next thread
+    threads_arr[queue_READY.front()->id]->elapsed_quantums += 1;
+
+    // set the previous thread to its new state and saving its environment
+    switch (pr) {
+        case expired_quantum:
+            threads_arr[RUNNING_id]->state = READY;
+            queue_READY.push(threads_arr[RUNNING_id]);
+            sigsetjmp(env[RUNNING_id], 1);
+
+        case blocked_state:
+            threads_arr[RUNNING_id]->state = BLOCKED;
+            sigsetjmp(env[RUNNING_id], 1);
+
+        case sleeping:
+            threads_arr[RUNNING_id]->state = SLEEP;
+            sigsetjmp(env[RUNNING_id], 1);
+
+        case terminated:
+            break;
+    }
+
+    // set up the environment of the previous thread
+    setup_thread(RUNNING_id, threads_arr[RUNNING_id]->stack, threads_arr[RUNNING_id]->entry_point);
+
+    // set the next thread to running state
+    RUNNING_id = queue_READY.front()->id;
+    queue_READY.pop();
+    threads_arr[RUNNING_id]->state = RUNNING;
+
+    // get the next thread going
+    siglongjmp(env[RUNNING_id], 1);
 }
+
 
 int ThreadScheduler::get_thread_elapsed_quantums(int tid) {
     if (threads_arr[tid] != nullptr) {
@@ -65,13 +102,16 @@ int ThreadScheduler::get_thread_elapsed_quantums(int tid) {
     }
 }
 
+
 int ThreadScheduler::get_elapsed_quantums() const {
     return elapsed_quantums;
 }
 
+
 int ThreadScheduler::get_RUNNING_id() const {
     return RUNNING_id;
 }
+
 
 int ThreadScheduler::spawn_thread(thread_entry_point entry_point) {
     // Checking if entry_point is null
@@ -92,41 +132,86 @@ int ThreadScheduler::spawn_thread(thread_entry_point entry_point) {
     return -1;
 }
 
+
 int ThreadScheduler::sleep_handler(int num_quantums) {
+
+    // saving the id of the previous thread
     int id_to_deal_with = get_RUNNING_id();
 
+    // it's an error if the main thread calls this function
     if (id_to_deal_with == 0) {
         return -1;
     }
+
+    // get the previous thread sleeping
     threads_arr[id_to_deal_with]->quantums_to_sleep = num_quantums;
-    switch_threads();
-    threads_arr[id_to_deal_with]->state = SLEEP;
+    switch_threads(sleeping);
     return 0;
 }
 
-int ThreadScheduler::stop_active_thread() {
-    // TODO fill function
-}
 
 int ThreadScheduler::sleeping_threads_handler() {
     for (int i = 1; i < MAX_THREAD_NUM; i++) {
         if (threads_arr[i] == nullptr) {
             continue;
         }
-        if (threads_arr[i]->quantums_to_sleep <= 0) {
-            continue;
-        }
-        threads_arr[i]->quantums_to_sleep -= 1;
         if (threads_arr[i]->quantums_to_sleep == 0) {
-            if (threads_arr[i]->state == 'S') {
+            if (threads_arr[i]->state == SLEEP) {
                 threads_arr[i]->state = READY;
                 queue_READY.push(threads_arr[i]);
-            } else {
+            } else if (threads_arr[i]->state == SNB) {
                 threads_arr[i]->state = BLOCKED;
             }
+        } else if (threads_arr[i]->quantums_to_sleep > 0) {
+            threads_arr[i]->quantums_to_sleep -= 1;
         }
     }
 }
+
+
+int ThreadScheduler::resume_thread(int tid) {
+    if (threads_arr[tid] == nullptr) {
+        return -1;
+    }
+    if (threads_arr[tid]->state == SNB) {
+        threads_arr[tid]->state = SLEEP;
+    } else if (threads_arr[tid]->state == BLOCKED) {
+        threads_arr[tid]->state = READY;
+        queue_READY.push(threads_arr[tid]);
+    }
+    return 0;
+}
+
+int ThreadScheduler::block_thread(int tid) {
+    if (tid == 0) {
+        return -1;
+    }
+    if (threads_arr[tid] == nullptr) {
+        return -1;
+    }
+    if (threads_arr[tid]->state == SLEEP) {
+        threads_arr[tid]->state = SNB;
+    } else if (threads_arr[tid]->state == READY) {
+        threads_arr[tid]->state = BLOCKED;
+
+        std::queue<Thread *> temp;
+
+        while (!queue_READY.empty()) {
+            if (queue_READY.front()->id != tid)
+                temp.push(queue_READY.front());
+            queue_READY.pop();
+        }
+
+        while (!temp.empty()) {
+            queue_READY.push(temp.front());
+            temp.pop();
+        }
+    }
+    if (tid == get_RUNNING_id()) {
+        switch_threads(blocked_state);
+    }
+}
+
 
 int ThreadScheduler::terminate_thread(int tid) {
     if (tid == 0) {
@@ -149,7 +234,7 @@ int ThreadScheduler::terminate_thread(int tid) {
 
     // if the thread deleted itself, we need to switch threads
     if (tid == RUNNING_id) {
-        switch_threads();
+        switch_threads(terminated);
     }
     return quantums_elapsed;
 
