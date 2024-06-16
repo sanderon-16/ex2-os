@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 project(ex2)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
-add_executable(ex2 ThreadScheduler.cpp ThreadScheduler.h thread.cpp thread.h uthreads.h uthreads.cpp test0_sanity.cpp)
+add_executable(ex2 thread_scheduler.cpp thread_scheduler.h thread.cpp thread.h uthreads.h uthreads.cpp tests/jona5.cpp)

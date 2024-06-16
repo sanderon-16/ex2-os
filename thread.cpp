@@ -16,6 +16,7 @@ Thread::Thread()
   id = 0;
   entry_point = nullptr;
   state = RUNNING;
+  elapsed_quantums = 1;
   quantums_to_sleep = 0;
   stack = nullptr;
 }

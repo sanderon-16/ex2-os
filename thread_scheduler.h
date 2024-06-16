@@ -16,6 +16,10 @@
 #include <memory>
 #include <iostream>
 #define SECOND 1000000
+#define NULL_ENTRY_POINT_ERROR (-1)
+#define TOO_MANY_THREADS_ERROR (-2)
+#define INVALID_ID_ERROR (-3)
+#define NO_THREAD_WITH_THIS_ID (-4)
 
 typedef void (*thread_entry_point)(void);
 enum preempted_reason {expired_quantum, blocked_state, terminated, sleeping};
@@ -27,7 +31,7 @@ class ThreadScheduler {
     int n_threads;
     int RUNNING_id;
     sigjmp_buf env[MAX_THREAD_NUM];
-    Thread **threads_arr;
+    Thread** threads_arr = nullptr;
     std::queue<Thread *> queue_READY;
 
 public:
