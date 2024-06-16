@@ -21,7 +21,6 @@ typedef void (*thread_entry_point)(void);
 enum preempted_reason {expired_quantum, blocked_state, terminated, sleeping};
 
 class ThreadScheduler {
-    int quantum_usecs;
     int elapsed_quantums;
 
     // Thread managing:
@@ -36,7 +35,7 @@ public:
      * the constructor of the scheduler.
      * @param _quantum_usecs decides how much time is considered a quantum.
      */
-    ThreadScheduler(int _quantum_usecs);
+    ThreadScheduler();
 
     /**
     * the destructor of the scheduler.
@@ -49,7 +48,7 @@ public:
      * @param stack
      * @param entry_point
      */
-    void setup_thread(int tid, char *stack, thread_entry_point entry_point);
+    void setup_thread(int tid, const char *stack, thread_entry_point entry_point);
 
     /**
        * switches the currently running thread.
@@ -61,7 +60,7 @@ public:
      * called during any active-thread switch, decreases the time left for any sleeping
      * thread to sleep, awakens those threads that are supposed to awake.
      */
-    int sleeping_threads_handler();
+    void sleeping_threads_handler();
 
     /**
      * the function creates another thread.

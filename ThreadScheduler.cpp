@@ -23,7 +23,32 @@ address_t translate_address(address_t addr) {
     return ret;
 }
 
-void ThreadScheduler::setup_thread(int tid, char *stack, thread_entry_point entry_point) {
+
+#else
+/* code for 32 bit Intel arch */
+
+typedef unsigned int address_t;
+#define JB_SP 4
+#define JB_PC 5
+
+
+/* A translation is required when using an address of a variable.
+   Use this as a black box in your code. */
+address_t translate_address(address_t addr)
+{
+    address_t ret;
+    asm volatile("xor    %%gs:0x18,%0\n"
+                 "rol    $0x9,%0\n"
+    : "=g" (ret)
+    : "0" (addr));
+    return ret;
+}
+
+
+#endif
+
+
+void ThreadScheduler::setup_thread(int tid, const char *stack, thread_entry_point entry_point) {
     // initializes env[tid] to use the right stack, and to run from the function 'entry_point', when we'll use
     // siglongjmp to jump into the thread.
     address_t sp = (address_t) stack + STACK_SIZE - sizeof(address_t);
@@ -37,8 +62,8 @@ void ThreadScheduler::setup_thread(int tid, char *stack, thread_entry_point entr
 }
 
 
-ThreadScheduler::ThreadScheduler(int _quantum_usecs)
-        : quantum_usecs(_quantum_usecs), elapsed_quantums(1), n_threads(1), RUNNING_id(0) {
+ThreadScheduler::ThreadScheduler()
+        : elapsed_quantums(1), n_threads(1), RUNNING_id(0) {
     // initializing threads array
     threads_arr = new Thread *[MAX_THREAD_NUM];
 
@@ -150,7 +175,7 @@ int ThreadScheduler::sleep_handler(int num_quantums) {
 }
 
 
-int ThreadScheduler::sleeping_threads_handler() {
+void ThreadScheduler::sleeping_threads_handler() {
     for (int i = 1; i < MAX_THREAD_NUM; i++) {
         if (threads_arr[i] == nullptr) {
             continue;
@@ -240,6 +265,18 @@ int ThreadScheduler::terminate_thread(int tid) {
     }
 
     // deleting the relevant thread
+    if (threads_arr[tid]->state == READY) {
+        std::queue<Thread *> temp;
+        while (!queue_READY.empty()) {
+            if (queue_READY.front()->id != tid)
+                temp.push(queue_READY.front());
+            queue_READY.pop();
+        }
+        while (!temp.empty()) {
+            queue_READY.push(temp.front());
+            temp.pop();
+        }
+    }
     delete threads_arr[tid];
     threads_arr[tid] = nullptr;
     n_threads--;

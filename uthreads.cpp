@@ -8,7 +8,7 @@
 
 std::unique_ptr<ThreadScheduler> scheduler;
 
-struct sigaction sa;
+struct sigaction sa = {0};
 struct itimerval timer;
 
 void timer_handler(int sig) {
@@ -20,11 +20,11 @@ int uthread_init(int quantum_usecs) {
     if (quantum_usecs <= 0) {
         return -1;
     }
-    scheduler = std::make_unique<ThreadScheduler>(quantum_usecs);
+    scheduler = std::make_unique<ThreadScheduler>();
 
     // installing the timer handler
     sa.sa_handler = &timer_handler;
-    if (sigaction(SIGVTALRM, &sa, nullptr) < 0) {
+    if (sigaction(SIGVTALRM, &sa, NULL) < 0) {
         std::cerr << "thread library error: setitimer install error.\n" << std::endl;
         return -1;
     }
@@ -37,9 +37,9 @@ int uthread_init(int quantum_usecs) {
     timer.it_interval.tv_usec = quantum_usecs % SECOND;
 
     // Start a virtual timer. It counts down whenever this process is executing.
-    if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
-        std::cerr << "thread library error: setitimer start error." << std::endl;
-        return -1;
+    if (setitimer(ITIMER_VIRTUAL, &timer, NULL)) {
+        std::cerr << "system error: setitimer start error." << std::endl;
+        exit(1);
     }
     return 0;
 }
@@ -50,7 +50,7 @@ int uthread_spawn(thread_entry_point entry_point) {
     if (ret_value == -1) {
         std::cerr << "thread library error: spawn error." << std::endl;
     }
-    return ret_value
+    return ret_value;
 }
 
 
