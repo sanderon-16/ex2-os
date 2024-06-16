@@ -82,9 +82,6 @@ int ThreadScheduler::switch_threads(preempted_reason pr) {
             break;
     }
 
-    // set up the environment of the previous thread
-    setup_thread(RUNNING_id, threads_arr[RUNNING_id]->stack, threads_arr[RUNNING_id]->entry_point);
-
     // set the next thread to running state
     RUNNING_id = queue_READY.front()->id;
     queue_READY.pop();
@@ -115,12 +112,14 @@ int ThreadScheduler::get_RUNNING_id() const {
 
 
 int ThreadScheduler::spawn_thread(thread_entry_point entry_point) {
+
     // Checking if entry_point is null
     if (entry_point == nullptr) {
         return -1;
     }
+
     // Searching for an empty slot in threads_arr
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
+    for (int i = 1; i < MAX_THREAD_NUM; i++) {
         if (threads_arr[i] == nullptr) {
             threads_arr[i] = new Thread(i, entry_point);
             setup_thread(i, threads_arr[i]->stack, entry_point);
@@ -129,7 +128,7 @@ int ThreadScheduler::spawn_thread(thread_entry_point entry_point) {
             return i;
         }
     }
-    // TODO print an error message
+
     return -1;
 }
 
@@ -171,64 +170,76 @@ int ThreadScheduler::sleeping_threads_handler() {
 
 
 int ThreadScheduler::resume_thread(int tid) {
+
+    // check input validity
     if (threads_arr[tid] == nullptr) {
         return -1;
     }
+
+    // change thread's state
     if (threads_arr[tid]->state == SNB) {
         threads_arr[tid]->state = SLEEP;
     } else if (threads_arr[tid]->state == BLOCKED) {
         threads_arr[tid]->state = READY;
         queue_READY.push(threads_arr[tid]);
     }
+
     return 0;
 }
 
 int ThreadScheduler::block_thread(int tid) {
+
+    // checking input validity
     if (tid == 0) {
         return -1;
     }
     if (threads_arr[tid] == nullptr) {
         return -1;
     }
-    if (threads_arr[tid]->state == SLEEP) {
-        threads_arr[tid]->state = SNB;
-    } else if (threads_arr[tid]->state == READY) {
-        threads_arr[tid]->state = BLOCKED;
 
-        std::queue<Thread *> temp;
+    // handling states
+    switch (threads_arr[tid]->state) {
+        case SLEEP:
+            threads_arr[tid]->state = SNB;
 
-        while (!queue_READY.empty()) {
-            if (queue_READY.front()->id != tid)
-                temp.push(queue_READY.front());
-            queue_READY.pop();
-        }
+        case BLOCKED:
+            break;
 
-        while (!temp.empty()) {
-            queue_READY.push(temp.front());
-            temp.pop();
-        }
+        case SNB:
+            break;
+
+        case RUNNING:
+            switch_threads(blocked_state);
+
+        case READY:
+            threads_arr[tid]->state = BLOCKED;
+
+            // removing blocked thread from ready threads queue
+            std::queue<Thread *> temp;
+            while (!queue_READY.empty()) {
+                if (queue_READY.front()->id != tid)
+                    temp.push(queue_READY.front());
+                queue_READY.pop();
+            }
+            while (!temp.empty()) {
+                queue_READY.push(temp.front());
+                temp.pop();
+            }
     }
-    if (tid == get_RUNNING_id()) {
-        switch_threads(blocked_state);
-    }
+
+    return 0;
 }
 
 
 int ThreadScheduler::terminate_thread(int tid) {
-    if (tid == 0) {
-        // release all resources
-        for (int i = 0; i < MAX_THREAD_NUM; i++) {
-            if (threads_arr[i] != nullptr) {
-                delete threads_arr[i];
-            }
-        }
-        delete[] threads_arr;
-        exit(0);
-    }
+
+    // getting the number of quantums the thread to terminate was in running state
     int quantums_elapsed = get_thread_elapsed_quantums(tid);
     if (quantums_elapsed == -1) {
         return -1;
     }
+
+    // deleting the relevant thread
     delete threads_arr[tid];
     threads_arr[tid] = nullptr;
     n_threads--;
@@ -237,7 +248,16 @@ int ThreadScheduler::terminate_thread(int tid) {
     if (tid == RUNNING_id) {
         switch_threads(terminated);
     }
+
     return quantums_elapsed;
+}
 
-
+ThreadScheduler::~ThreadScheduler() {
+    // release all resources
+    for (int i = MAX_THREAD_NUM - 1; i >= 0; --i) {
+        if (threads_arr[i] != nullptr) {
+            delete threads_arr[i];
+        }
+    }
+    delete[] threads_arr;
 }

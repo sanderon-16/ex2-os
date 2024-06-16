@@ -39,6 +39,11 @@ public:
     ThreadScheduler(int _quantum_usecs);
 
     /**
+    * the destructor of the scheduler.
+    */
+    ~ThreadScheduler();
+
+    /**
      * sets up the thread like the example.
      * @param tid
      * @param stack

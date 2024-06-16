@@ -51,29 +51,44 @@ int uthread_spawn(thread_entry_point entry_point) {
 
 
 int uthread_terminate(int tid) {
-    // reset the timer:
-    if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
-        std::cerr << "thread library error: setitimer start error." << std::endl;
-        return -1;
+
+    // delete all if the main thread is  deleted
+    if (tid == 0) {
+        //delete &scheduler; is called implicitly in cpp
+        exit(0);
     }
-    scheduler->terminate_thread(tid);
+
+    // restart timer if the quantum is forced to end
+    if (scheduler->get_RUNNING_id() == tid) {
+        if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
+            std::cerr << "thread library error: setitimer start error." << std::endl;
+            return -1;
+        }
+    }
+
+    // terminating thread
+    return scheduler->terminate_thread(tid);
 }
 
 
 int uthread_block(int tid) {
-    // reset the timer: TODO if idblocked==idrunning
-    if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
-        std::cerr << "thread library error: setitimer start error." << std::endl;
-        return -1;
+
+    // restart timer if the quantum is forced to end
+    if (scheduler->get_RUNNING_id() == tid) {
+        if (setitimer(ITIMER_VIRTUAL, &timer, nullptr)) {
+            std::cerr << "thread library error: setitimer start error." << std::endl;
+            return -1;
+        }
     }
-    scheduler->block_thread(tid);
+
+    // blocking thread
+    return scheduler->block_thread(tid);
 }
 
 
 int uthread_resume(int tid) {
     return scheduler->resume_thread(tid);
 }
-
 
 
 int uthread_sleep(int num_quantums) {
